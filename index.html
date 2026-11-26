@@ -203,12 +203,26 @@ const st = {
 let ctx = null, buf = null, bufKey = "", bufPromise = null, src = null, timer = null, token = 0, raf = 0, wake = null;
 
 /* ---------- audio ---------- */
+/* iPhone and iPad: the page's sound is silenced by the ring/silent switch unless the audio
+   session is "playback". Ask for that, and keep a silent media element playing while we speak. */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let keepAlive = null;
+function iosUnlock() {
+  if (!IS_IOS) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  if (!keepAlive) {
+    keepAlive = new Audio("data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==");
+    keepAlive.loop = true; keepAlive.setAttribute("playsinline", ""); keepAlive.preload = "auto";
+  }
+  if (keepAlive.paused) { const pr = keepAlive.play(); if (pr && pr.catch) pr.catch(() => {}); }
+}
 function ensureCtx() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    try { ctx = new AC({ sampleRate: 24000 }); } catch (e) { ctx = new AC(); }
+    if (IS_IOS) ctx = new AC();
+    else { try { ctx = new AC({ sampleRate: 24000 }); } catch (e) { ctx = new AC(); } }
   }
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  if (ctx.state !== "running") { const pr = ctx.resume(); if (pr && pr.catch) pr.catch(() => {}); }
   return ctx;
 }
 function loadBuffer() {
@@ -233,12 +247,13 @@ function halt() {
 }
 function stop(msg) {
   halt(); st.mode = null;
+  if (keepAlive && !keepAlive.paused) keepAlive.pause();
   if (wake) { wake.release().catch(() => {}); wake = null; }
   setMsg(msg || "");
   paint();
 }
 function run(i, end, mode) {
-  halt(); ensureCtx();
+  halt(); ensureCtx(); iosUnlock();
   st.mode = mode; st.end = end; st.done = false;
   if (!wake && navigator.wakeLock) navigator.wakeLock.request("screen").then(w => { if (st.mode) wake = w; else w.release().catch(() => {}); }).catch(() => {});
   step(i);
@@ -336,7 +351,7 @@ $("cards").innerHTML = DATA.speeches.map(sp =>
   '<span class="sub">' + esc(sp.zh) + '・' + sp.sections.reduce((a, s) => a + s.items.length, 0) + ' 句</span></button>').join("");
 $("cards").addEventListener("click", e => {
   const c = e.target.closest(".card"); if (!c) return;
-  ensureCtx(); try { location.hash = c.dataset.id; } catch (e) {}
+  ensureCtx(); iosUnlock(); try { location.hash = c.dataset.id; } catch (e) {}
   const sp = DATA.speeches.find(s => s.id === c.dataset.id); if (st.sp !== sp) openSpeech(sp);
 });
 $("btn-home").addEventListener("click", () => { try { location.hash = ""; } catch (e) {} goHome(); });

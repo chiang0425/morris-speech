@@ -1,5 +1,5 @@
 // Offline cache for Morris演講練習. Change VERSION whenever any file changes.
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "morris-speech-" + VERSION;
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-180.png",
   "audio/treasure-70.mp3", "audio/treasure-85.mp3", "audio/treasure-100.mp3",
