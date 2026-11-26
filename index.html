@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Morris演講練習</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FFD84A">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<style>body{margin:0;font:14px system-ui,sans-serif}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}</style>
+
+<style>
+/* Layout: one-screen practice app. Top bar (home, title, text size), a scrolling script of
+   big tappable sentences, and a bottom dock with play, speed and two practice switches. */
+:root {
+  --bg: #F6FAF1;
+  --surface: #FFFFFF;
+  --ink: #1C2A2E;
+  --muted: #5B6B6C;
+  --line: #D9E4D5;
+  --lemon: #FFD84A;
+  --lemon-soft: #FFF3B8;
+  --leaf: #1D8448;
+  --leaf-ink: #FFFFFF;
+  --hint: #1B7641;
+  --mark: #D4412C;
+  --font-display: "Fredoka", "Noto Sans TC", "Noto Sans CJK TC", system-ui, sans-serif;
+  --font-read: "Lexend", "Noto Sans TC", "Noto Sans CJK TC", system-ui, sans-serif;
+  --fs: 28px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12191A; --surface: #1C2628; --ink: #EEF3EB; --muted: #A3B3B0; --line: #2D3B3B;
+    --lemon: #F3CB3B; --lemon-soft: #413A12; --leaf: #53C988; --leaf-ink: #0C1A11;
+    --hint: #7FD8A5; --mark: #FF7B66; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12191A; --surface: #1C2628; --ink: #EEF3EB; --muted: #A3B3B0; --line: #2D3B3B;
+  --lemon: #F3CB3B; --lemon-soft: #413A12; --leaf: #53C988; --leaf-ink: #0C1A11;
+  --hint: #7FD8A5; --mark: #FF7B66; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-read); overflow: hidden; }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--leaf); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.view { height: 100%; display: flex; flex-direction: column; }
+
+/* Home */
+#home { overflow-y: auto; }
+.home-inner { max-width: 900px; width: 100%; margin: 0 auto; padding-block: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 52px; height: 52px; flex: none; }
+.brand h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 5vw, 38px); margin: 0; line-height: 1.15; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 20px; text-align: left; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card:active { border-color: var(--leaf); transform: scale(.985); }
+.card .art { background: var(--lemon-soft); border-radius: 14px; display: grid; place-items: center; padding: 14px; }
+.card .art svg { width: 100%; max-width: 220px; height: auto; }
+.card .num { font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--leaf); letter-spacing: .04em; }
+.card .name { font-family: var(--font-display); font-weight: 600; font-size: clamp(24px, 4vw, 30px); line-height: 1.2; text-wrap: balance; }
+.card .sub { color: var(--muted); font-size: 16px; }
+.howto { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 0; }
+
+/* Speech view */
+.topbar { background: var(--surface); border-bottom: 2px solid var(--line); flex: none; }
+.topbar-inner { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.icon-btn { background: var(--bg); border: 2px solid var(--line); border-radius: 14px; min-width: 56px; height: 56px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-display); font-weight: 600; font-size: 18px; flex: none; }
+.icon-btn svg { width: 26px; height: 26px; }
+.icon-btn:active { background: var(--lemon-soft); }
+.icon-btn:disabled { opacity: .35; }
+.topbar h2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(17px, 3vw, 24px); margin: 0; flex: 1; min-width: 0; line-height: 1.2; text-wrap: balance; }
+#script { flex: 1; overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+.script-inner { max-width: 900px; margin: 0 auto; padding-block: 16px 28px; display: flex; flex-direction: column; gap: 22px; }
+.sec { display: flex; flex-direction: column; gap: 8px; }
+.sec-head { display: flex; align-items: center; gap: 10px; }
+.sec-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--muted); margin: 0; flex: 1; min-width: 0; }
+.sec-play { background: none; border: 2px solid var(--line); border-radius: 999px; height: 44px; padding: 0 14px 0 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--leaf); font-family: var(--font-display); font-weight: 600; flex: none; }
+.sec-play svg { width: 18px; height: 18px; }
+.sec-play:active { background: var(--lemon-soft); }
+.line { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: .5em .7em; text-align: left; font-size: var(--fs); line-height: 1.45; width: 100%; display: block; min-width: 0; overflow-wrap: anywhere; }
+.line .hint { display: block; font-size: max(14px, .55em); color: var(--hint); font-style: italic; margin-top: .25em; line-height: 1.3; }
+.line.cur { background: var(--lemon-soft); border-color: var(--lemon); }
+.line.speaking { border-color: var(--leaf); }
+.line.turn { border-style: dashed; border-color: var(--leaf); }
+
+.dock { background: var(--surface); border-top: 2px solid var(--line); flex: none; }
+.dock-inner { max-width: 900px; margin: 0 auto; padding-block: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.status { min-height: 26px; font-family: var(--font-display); font-weight: 600; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+.status .count { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.status .msg { flex: 1; min-width: 0; }
+.status .msg.turn { color: var(--leaf); }
+.status .msg.err { color: var(--mark); }
+.turnbar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.turnbar i { display: block; height: 100%; width: 0; background: var(--leaf); border-radius: 3px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.play { background: var(--leaf); color: var(--leaf-ink); border: 0; border-radius: 20px; height: 68px; min-width: 150px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 22px; flex: none; }
+.play svg { width: 30px; height: 30px; }
+.play:active { transform: scale(.97); }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 16px; overflow: hidden; flex: none; }
+.seg button { background: var(--bg); border: 0; height: 56px; min-width: 60px; padding: 0 14px; font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+.seg button + button { border-left: 2px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--lemon); color: #1C2A2E; }
+.toggle { background: var(--bg); border: 2px solid var(--line); border-radius: 16px; height: 56px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 18px; flex: none; }
+.toggle svg { width: 24px; height: 24px; }
+.toggle[aria-pressed="true"] { background: var(--lemon); border-color: var(--lemon); color: #1C2A2E; }
+.label { font-size: 14px; color: var(--muted); font-family: var(--font-display); font-weight: 500; margin-right: -6px; }
+@media (max-width: 520px) {
+  .play { min-width: 0; flex: 1 1 100%; height: 60px; }
+  .label { display: none; }
+  .icon-btn { min-width: 48px; height: 48px; padding: 0 8px; }
+  .icon-btn .txt { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div id="home" class="view">
+  <div class="gutter">
+    <div class="home-inner">
+      <div class="brand">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><ellipse cx="25" cy="29" rx="19" ry="16" fill="var(--lemon)"/><path d="M42 27c4 0 6 2 6 2s-2 3-6 3z" fill="var(--lemon)"/><path d="M24 13c1-6 6-9 12-8-1 6-6 9-12 8z" fill="var(--leaf)"/></svg>
+        <div>
+          <h1>Morris 演講練習</h1>
+          <p>Lemon Class・選一篇開始練習</p>
+        </div>
+      </div>
+      <div class="cards" id="cards"></div>
+      <p class="howto">點一句話，就會念那一句。按「播放」會從頭念到尾。打開「跟讀」，每念完一句會停下來等你跟著念。</p>
+      <p class="howto" id="pwa-note" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<div id="speech" class="view" hidden>
+  <div class="topbar">
+    <div class="gutter"><div class="topbar-inner">
+      <button class="icon-btn" id="btn-home" type="button" aria-label="回主頁">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg>
+        <span class="txt">主頁</span>
+      </button>
+      <h2 id="sp-title"></h2>
+      <button class="icon-btn" id="btn-smaller" type="button" aria-label="字變小">A−</button>
+      <button class="icon-btn" id="btn-bigger" type="button" aria-label="字變大" style="font-size:24px">A+</button>
+    </div></div>
+  </div>
+  <div id="script"><div class="gutter"><div class="script-inner" id="script-inner"></div></div></div>
+  <div class="dock">
+    <div class="gutter"><div class="dock-inner">
+      <div class="status"><span class="msg" id="msg" aria-live="polite"></span><span class="count" id="count"></span></div>
+      <div class="turnbar" id="turnbar" hidden><i id="turnfill"></i></div>
+      <div class="controls">
+        <button class="play" id="btn-play" type="button"></button>
+        <span class="label">速度</span>
+        <div class="seg" role="group" aria-label="速度">
+          <button type="button" data-speed="70" aria-pressed="false">慢</button>
+          <button type="button" data-speed="85" aria-pressed="false">中</button>
+          <button type="button" data-speed="100" aria-pressed="false">快</button>
+        </div>
+        <button class="toggle" id="btn-follow" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg>
+          跟讀
+        </button>
+        <button class="toggle" id="btn-repeat" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>
+          重複這句
+        </button>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"speeches":[{"id":"treasure-map","file":"treasure","num":1,"title":"I Found a Treasure Map!","zh":"我找到一張藏寶圖！","sections":[{"zh":"開場，發現瓶子","items":[{"t":"Good morning, everyone!"},{"t":"My name is Morris, and today I am going to tell you about the most exciting adventure I have ever had!"},{"t":"One beautiful morning, I was walking along the beach when something caught my attention."},{"t":"I saw something shining brightly like a mirror in the wet sand."},{"t":"It was a glass bottle washed up on the shore!"},{"t":"Inside, there was a mysterious piece of paper."},{"t":"I picked it up, pulled it out, and carefully unrolled it."},{"t":"It was a real treasure map!"}]},{"zh":"地圖，準備出發","items":[{"t":"The map was old looking, it had winding paths, and secret instructions."},{"t":"But there was one thing that caught my eye."},{"t":"A huge red X marked right in the middle of the island."},{"t":"I heard “The treasure awaits you!”","say":"I heard, \"The treasure awaits you!\""},{"t":"It felt like a ghost saying it to me."},{"t":"I knew I had to find it!"},{"t":"I threw some things in my backpack with water, some snacks, and a strong shovel."},{"t":"Then, my big adventure began."}]},{"zh":"叢林，小螃蟹","items":[{"t":"According to the map, I had to follow a narrow path through a dark, foggy jungle."},{"t":"I could hear birds singing high above me and strange noises coming from the bushes."},{"t":"Suddenly, I heard… CRACK!","say":"Suddenly, I heard… Crack!"},{"t":"I froze!"},{"t":"Something was moving behind me."},{"t":"I slowly turned around… and there was just a tiny crab staring up at me!"},{"t":"“Phew!” I said.","say":"\"Phew!\" I said."},{"t":"“You gave me a big fright!”","say":"You gave me a big fright!"}]},{"zh":"紅色 X，挖寶","items":[{"t":"I kept walking until I reached a huge grey rock."},{"t":"I looked down, and there it was, THE RED X!","say":"I looked down, and there it was, the red X!"},{"t":"I had finally found the secret location!"},{"t":"I took my shovel and began to dig into the sand."},{"t":"Dig, dig, dig!"},{"t":"Suddenly… CLANG!","say":"Suddenly… Clang!"},{"t":"My shovel hit something hard."},{"t":"I cleared the sand away and discovered an enormous wooden treasure chest."},{"t":"“I found it!”","say":"I found it!"}]},{"zh":"打開寶箱，結尾","items":[{"t":"My heart was beating so fast."},{"t":"Can you guess what was inside?"},{"t":"I lifted the heavy lid… CREEEEAK!","say":"I lifted the heavy lid… Creak!"},{"t":"Inside were hundreds of sparkling gold coins."},{"t":"It was amazing, but I decided to take just one small coin as a token of my adventure and leave the rest behind for another explorer."},{"t":"Because who knows?"},{"t":"Maybe one day, the next explorer will be you!"},{"t":"Thank you for listening!"},{"t":"ARRR!","say":"Arr!"}]}]},{"id":"empty-chair","file":"chair","num":2,"title":"The Empty Chair","zh":"空椅子","sections":[{"zh":"開場，爸爸的紙條","items":[{"t":"Hello, everyone!"},{"t":"My name is Morris.","h":"Smile and wave"},{"t":"I am from Lemon Class.","h":"Bow politely"},{"t":"Today, I will tell you a story called “The Empty Chair.”","say":"Today, I will tell you a story called, \"The Empty Chair.\"","h":"Pause"},{"t":"My dad drives a city bus.","h":"Pretend to hold a steering wheel"},{"t":"He leaves home before sunrise."},{"t":"Some mornings, I find a note beside my breakfast:","say":"Some mornings, I find a note beside my breakfast."},{"t":"“Have a wonderful day. I’m proud of you.”","say":"Have a wonderful day. I'm proud of you.","h":"Pretend to read a note and smile"},{"t":"I keep every note in a little box under my bed."},{"t":"When I miss Dad, I open the box and read one again.","h":"Pretend to lift the lid"}]},{"zh":"被選上演講，爸爸陪練","items":[{"t":"One day, my teacher chose me to give a speech."},{"t":"I felt proud, but my stomach fluttered whenever I thought about the stage."},{"t":"Every night, Dad listened while I practiced."},{"t":"Even when he came home tired, he sat down and said, “I’m ready. Begin when you are.”","say":"Even when he came home tired, he sat down and said, \"I'm ready. Begin when you are.\""},{"t":"“If you feel afraid,” he told me, “imagine you’re speaking just to me.”","say":"\"If you feel afraid,\" he told me, \"imagine you're speaking just to me.\"","h":"Speak in Dad’s gentle voice"}]},{"zh":"爸爸不能來","items":[{"t":"On the morning of the speech, Dad stood by the door with his bus keys in his hand."},{"t":"“Someone at work is sick,” he said.","say":"\"Someone at work is sick,\" he said."},{"t":"“I must drive today. I’m sorry I can’t come.”","say":"I must drive today. I'm sorry I can't come.","h":"Let your smile fade"},{"t":"I wanted to say, please stay."},{"t":"Instead, I whispered, “It’s okay.”","say":"Instead, I whispered, \"It's okay.\""},{"t":"Dad hugged me, but after he left, I cried.","h":"Wipe your eyes"}]},{"zh":"空椅子，鼓起勇氣","items":[{"t":"At school, I waited behind the curtain."},{"t":"My teacher called my name."},{"t":"I stepped onstage and searched the audience.","h":"Look slowly from side to side"},{"t":"The chair where I had hoped to see Dad was empty.","h":"Pause and look at one spot"},{"t":"My hands trembled."},{"t":"I opened my mouth, but I could not remember my first line.","h":"Look at your hands"},{"t":"Then I pictured Dad sitting there, smiling as he had during our practice."},{"t":"I took a deep breath and began.","h":"Breathe in and stand tall"},{"t":"My first words came out softly."},{"t":"With every sentence, my voice grew stronger."},{"t":"I looked at the empty chair and spoke to Dad."}]},{"zh":"結局，結語","items":[{"t":"That evening, Dad watched a video my teacher had sent him."},{"t":"When it ended, he stood up and clapped.","h":"Clap gently"},{"t":"“I wish I had been there,” he said quietly.","say":"\"I wish I had been there,\" he said quietly."},{"t":"I opened my little box and placed one of his notes in his hand.","h":"Pretend to hand him the note"},{"t":"“You were there, Dad,” I said.","say":"\"You were there, Dad,\" I said."},{"t":"“I was speaking to you.”","say":"I was speaking to you."},{"t":"He read his own words: “I’m proud of you.”","say":"He read his own words: \"I'm proud of you.\""},{"t":"His eyes filled with tears."},{"t":"Then he pulled me into a hug.","h":"Wrap your arms around yourself and pause"},{"t":"That day, I learned that the people we love cannot always sit beside us."},{"t":"But their words can stay with us and help us be brave."},{"t":"Dad’s chair was empty, but my heart was full.","h":"Place a hand over your heart"},{"t":"Thank you for listening!","h":"Bow"}]}]}]};
+const TIMING = {"treasure-map":{"70":[[0.3,2.109],[2.759,8.673],[11.782,6.744],[18.876,4.87],[24.095,3.264],[27.709,3.813],[31.872,4.288],[36.509,2.09],[38.949,5.78],[45.079,2.718],[48.147,4.444],[52.941,2.716],[56.006,2.863],[59.219,2.051],[61.62,6.088],[68.058,2.888],[71.297,6.634],[78.281,6.607],[85.238,2.134],[87.722,1.22],[89.292,2.435],[92.078,5.773],[98.201,1.598],[100.149,1.926],[102.425,3.956],[106.73,3.432],[110.513,3.22],[114.083,4.019],[118.452,1.64],[120.442,1.673],[122.465,2.497],[125.313,5.715],[131.378,1.202],[132.929,2.642],[135.921,2.075],[138.347,2.45],[141.147,3.834],[145.331,12.046],[157.728,1.467],[159.544,3.777],[163.671,1.762],[165.783,0.796]],"85":[[0.3,1.648],[2.298,6.91],[9.557,5.228],[15.136,3.769],[19.255,2.517],[22.122,2.959],[25.431,3.302],[29.083,1.614],[31.047,4.603],[36.0,2.002],[38.352,3.211],[41.913,2.018],[44.281,2.163],[46.794,1.491],[48.636,4.754],[53.74,2.218],[56.308,5.047],[61.706,5.245],[67.3,1.575],[69.225,0.912],[70.487,1.856],[72.693,4.567],[77.61,1.237],[79.197,1.45],[80.996,2.984],[84.33,2.661],[87.341,2.535],[90.226,3.116],[93.692,1.214],[95.255,1.335],[96.94,1.782],[99.073,4.479],[103.902,1.0],[105.252,2.092],[107.694,1.653],[109.697,1.838],[111.885,2.837],[115.073,9.289],[124.711,1.172],[126.233,2.863],[129.447,1.376],[131.172,0.616]],"100":[[0.3,1.405],[2.055,5.99],[8.395,4.636],[13.381,3.419],[17.15,2.255],[19.754,2.574],[22.678,2.983],[26.011,1.422],[27.783,4.011],[32.144,1.832],[34.326,3.027],[37.704,1.756],[39.809,1.854],[42.014,1.312],[43.675,4.317],[48.343,1.877],[50.57,4.517],[55.437,4.605],[60.392,1.413],[62.155,0.798],[63.303,1.714],[65.367,4.067],[69.784,1.034],[71.168,1.313],[72.832,2.657],[75.839,2.412],[78.601,2.27],[81.22,2.802],[84.373,1.117],[85.84,1.14],[87.33,1.63],[89.31,4.05],[93.711,0.779],[94.84,1.83],[97.02,1.506],[98.876,1.576],[100.802,2.603],[103.755,8.445],[112.55,0.984],[113.884,2.463],[116.696,1.137],[118.183,0.521]]},"empty-chair":{"70":[[0.3,1.656],[2.306,1.788],[4.444,2.043],[6.836,4.439],[11.626,2.406],[14.382,2.535],[17.267,4.042],[21.66,3.279],[25.289,3.739],[29.378,4.272],[34.0,3.602],[37.952,5.631],[43.933,3.336],[47.619,7.137],[55.106,5.801],[61.257,6.039],[67.647,2.702],[70.698,3.874],[74.922,2.367],[77.64,3.025],[81.015,3.451],[84.816,3.088],[88.255,2.138],[90.743,3.163],[94.256,3.652],[98.258,1.696],[100.304,4.994],[105.649,5.779],[111.778,2.424],[114.552,2.619],[117.521,3.539],[121.41,3.441],[125.201,4.641],[130.192,2.807],[133.349,3.436],[137.135,4.667],[142.152,2.266],[144.768,1.734],[146.851,3.325],[150.527,2.208],[153.084,2.126],[155.561,5.992],[161.903,4.239],[166.491,3.775],[170.617,1.762]],"85":[[0.3,1.288],[1.938,1.328],[3.616,1.558],[5.525,3.377],[9.252,1.846],[11.448,1.917],[13.715,3.152],[17.217,2.488],[20.055,2.812],[23.216,3.305],[26.871,2.731],[29.952,4.343],[34.645,2.637],[37.632,5.509],[43.491,4.435],[48.276,4.657],[53.283,2.186],[55.82,2.936],[59.106,1.797],[61.254,2.286],[63.889,2.788],[67.027,2.369],[69.746,1.628],[71.724,2.397],[74.47,2.871],[77.691,1.267],[79.308,3.773],[83.431,4.666],[88.446,1.913],[90.71,2.036],[93.096,2.711],[96.157,2.699],[99.206,3.494],[103.05,2.144],[105.544,2.584],[108.477,3.655],[112.482,1.79],[114.623,1.276],[116.249,2.625],[119.224,1.678],[121.252,1.628],[123.23,4.652],[128.231,3.13],[131.711,2.814],[134.875,1.376]],"100":[[0.3,1.112],[1.762,1.225],[3.337,1.414],[5.102,3.008],[8.46,1.676],[10.486,1.783],[12.618,2.768],[15.736,2.204],[18.29,2.559],[21.2,2.976],[24.525,2.515],[27.391,3.859],[31.6,2.258],[34.207,4.897],[39.455,4.049],[43.853,4.19],[48.393,1.755],[50.498,2.617],[53.464,1.645],[55.46,1.992],[57.802,2.429],[60.581,2.098],[63.028,1.448],[64.826,2.159],[67.335,2.489],[70.174,1.153],[71.677,3.404],[75.431,4.11],[79.891,1.698],[81.94,1.827],[84.116,2.414],[86.88,2.323],[89.553,3.124],[93.027,1.972],[95.348,2.303],[98.001,3.302],[101.654,1.579],[103.583,1.158],[105.091,2.243],[107.684,1.557],[109.591,1.45],[111.392,4.082],[115.823,2.814],[118.987,2.571],[121.908,1.137]]}};
+const ART = {
+  "treasure-map": '<svg viewBox="0 0 220 120" aria-hidden="true"><path d="M14 16l62-8 68 10 62-8v94l-62 8-68-10-62 8z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><path d="M36 86c18-30 34 6 52-18s30-22 52-8" fill="none" stroke="var(--ink)" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/><path d="M158 44l22 22M180 44l-22 22" stroke="var(--mark)" stroke-width="7" stroke-linecap="round"/><circle cx="36" cy="88" r="6" fill="var(--leaf)"/></svg>',
+  "empty-chair": '<svg viewBox="0 0 220 120" aria-hidden="true"><path d="M82 12h56v54H82z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><path d="M96 24v30M110 24v30M124 24v30" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><path d="M72 66h76v12H72z" fill="var(--lemon)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/><path d="M80 78v32M140 78v32" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/><path d="M172 30c0-7 10-7 10 0 0-7 10-7 10 0 0 8-10 14-10 14s-10-6-10-14z" fill="var(--mark)"/></svg>'
+};
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>';
+const FONT_STEPS = [20, 24, 28, 34, 40, 48];
+const $ = id => document.getElementById(id);
+
+function loadPrefs() { try { return JSON.parse(localStorage.getItem("morris-speech-prefs")) || {}; } catch (e) { return {}; } }
+function savePrefs() { try { localStorage.setItem("morris-speech-prefs", JSON.stringify({ fs: st.fs, speed: st.speed, follow: st.follow })); } catch (e) {} }
+const prefs = loadPrefs();
+const st = {
+  sp: null, items: [], idx: 0, mode: null, end: 0, done: false,
+  fs: Number.isInteger(prefs.fs) && prefs.fs >= 0 && prefs.fs < FONT_STEPS.length ? prefs.fs : 2,
+  speed: ["70", "85", "100"].includes(prefs.speed) ? prefs.speed : "85",
+  follow: !!prefs.follow, repeat: false
+};
+let ctx = null, buf = null, bufKey = "", bufPromise = null, src = null, timer = null, token = 0, raf = 0, wake = null;
+
+/* ---------- audio ---------- */
+function ensureCtx() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { ctx = new AC({ sampleRate: 24000 }); } catch (e) { ctx = new AC(); }
+  }
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  return ctx;
+}
+function loadBuffer() {
+  const key = st.sp.file + "-" + st.speed;
+  if (bufKey === key && buf) return Promise.resolve(buf);
+  if (bufPromise && bufPromise.key === key) return bufPromise;
+  buf = null; bufKey = "";
+  const c = ensureCtx();
+  const p = fetch("audio/" + key + ".mp3")
+    .then(r => { if (!r.ok) throw new Error("http " + r.status); return r.arrayBuffer(); })
+    .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+    .then(b => { if (bufPromise === p) { buf = b; bufKey = key; bufPromise = null; } return b; })
+    .catch(e => { if (bufPromise === p) bufPromise = null; throw e; });
+  p.key = key; bufPromise = p;
+  return p;
+}
+function halt() {
+  token++;
+  if (src) { src.onended = null; try { src.stop(); } catch (e) {} src = null; }
+  clearTimeout(timer); cancelAnimationFrame(raf);
+  $("turnbar").hidden = true;
+}
+function stop(msg) {
+  halt(); st.mode = null;
+  if (wake) { wake.release().catch(() => {}); wake = null; }
+  setMsg(msg || "");
+  paint();
+}
+function run(i, end, mode) {
+  halt(); ensureCtx();
+  st.mode = mode; st.end = end; st.done = false;
+  if (!wake && navigator.wakeLock) navigator.wakeLock.request("screen").then(w => { if (st.mode) wake = w; else w.release().catch(() => {}); }).catch(() => {});
+  step(i);
+}
+function step(i) {
+  const my = token;
+  st.idx = i; paint(true);
+  if (!buf || bufKey !== st.sp.file + "-" + st.speed) setMsg("聲音準備中…");
+  loadBuffer().then(b => {
+    if (my !== token) return;
+    setMsg("");
+    const [s, d] = TIMING[st.sp.id][st.speed][i];
+    src = ctx.createBufferSource(); src.buffer = b; src.connect(ctx.destination);
+    src.onended = () => { if (my === token) after(i, d); };
+    src.start(0, Math.max(0, s - 0.03), d + 0.1);
+    lineEl(i).classList.add("speaking");
+  }).catch(() => { if (my === token) stop("聲音載不進來。第一次使用需要網路，請連上網路後再按一次播放。"); $("msg").classList.add("err"); });
+}
+function after(i, d) {
+  const my = token; src = null;
+  const el = lineEl(i); el.classList.remove("speaking");
+  const gap = st.follow ? d * 1.15 + 0.8 : 0.45;
+  if (st.follow) {
+    el.classList.add("turn"); setMsg("換你說！ Your turn!", "turn");
+    const t0 = performance.now(), bar = $("turnbar"), fill = $("turnfill"); bar.hidden = false;
+    const tick = () => { fill.style.width = Math.min(100, (performance.now() - t0) / (gap * 10)) + "%"; if (my === token) raf = requestAnimationFrame(tick); };
+    tick();
+  }
+  timer = setTimeout(() => {
+    if (my !== token) return;
+    cancelAnimationFrame(raf); $("turnbar").hidden = true; el.classList.remove("turn"); setMsg("");
+    if (st.repeat) step(i);
+    else if (st.mode === "all" && i < st.end) step(i + 1);
+    else { st.done = st.mode === "all" && i === st.items.length - 1; stop(st.done ? "念完了，很棒！" : ""); }
+  }, gap * 1000);
+}
+
+/* ---------- rendering ---------- */
+function lineEl(i) { return document.querySelector('.line[data-i="' + i + '"]'); }
+function setMsg(t, cls) { const m = $("msg"); m.textContent = t; m.className = "msg" + (cls ? " " + cls : ""); }
+function paint(scroll) {
+  document.querySelectorAll(".line").forEach(el => {
+    const on = +el.dataset.i === st.idx;
+    el.classList.toggle("cur", on);
+    if (on) el.setAttribute("aria-current", "true"); else el.removeAttribute("aria-current");
+    if (!on || !st.mode) el.classList.remove("speaking", "turn");
+  });
+  if (scroll) {
+    const el = lineEl(st.idx);
+    if (el) el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+  $("btn-play").innerHTML = st.mode ? ICON_PAUSE + "<span>暫停</span>" : ICON_PLAY + "<span>播放</span>";
+  $("btn-play").setAttribute("aria-label", st.mode ? "暫停" : "從這一句開始播放整篇");
+  $("count").textContent = st.items.length ? (st.idx + 1) + " / " + st.items.length : "";
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.speed === st.speed)));
+  $("btn-follow").setAttribute("aria-pressed", String(st.follow));
+  $("btn-repeat").setAttribute("aria-pressed", String(st.repeat));
+  document.documentElement.style.setProperty("--fs", FONT_STEPS[st.fs] + "px");
+  $("btn-smaller").disabled = st.fs === 0;
+  $("btn-bigger").disabled = st.fs === FONT_STEPS.length - 1;
+}
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function openSpeech(sp) {
+  halt();
+  st.sp = sp; st.items = sp.sections.flatMap(s => s.items); st.idx = 0; st.mode = null; st.done = false; st.repeat = false;
+  $("sp-title").textContent = sp.title;
+  let n = 0, html = "";
+  sp.sections.forEach((sec, k) => {
+    const first = n, last = n + sec.items.length - 1;
+    html += '<section class="sec"><div class="sec-head"><h3>第 ' + (k + 1) + ' 段・' + esc(sec.zh) + '</h3>' +
+      '<button class="sec-play" type="button" data-first="' + first + '" data-last="' + last + '" aria-label="只播第 ' + (k + 1) + ' 段">' + ICON_PLAY + '播這段</button></div>';
+    sec.items.forEach(it => {
+      html += '<button class="line" type="button" data-i="' + n + '">' + esc(it.t) + (it.h ? '<span class="hint">(' + esc(it.h) + ')</span>' : '') + '</button>';
+      n++;
+    });
+    html += '</section>';
+  });
+  $("script-inner").innerHTML = html;
+  $("home").hidden = true; $("speech").hidden = false;
+  $("script").scrollTop = 0;
+  setMsg(""); paint();
+  loadBuffer().catch(() => {});
+}
+function goHome() { stop(); $("speech").hidden = true; $("home").hidden = false; st.sp = null; }
+function route() {
+  const id = location.hash.replace(/^#/, "");
+  const sp = DATA.speeches.find(s => s.id === id);
+  if (sp) { if (st.sp !== sp) openSpeech(sp); } else goHome();
+}
+
+/* ---------- events ---------- */
+$("cards").innerHTML = DATA.speeches.map(sp =>
+  '<button class="card" type="button" data-id="' + sp.id + '"><span class="art">' + ART[sp.id] + '</span>' +
+  '<span class="num">演講 ' + sp.num + '</span><span class="name">' + esc(sp.title) + '</span>' +
+  '<span class="sub">' + esc(sp.zh) + '・' + sp.sections.reduce((a, s) => a + s.items.length, 0) + ' 句</span></button>').join("");
+$("cards").addEventListener("click", e => {
+  const c = e.target.closest(".card"); if (!c) return;
+  ensureCtx(); try { location.hash = c.dataset.id; } catch (e) {}
+  const sp = DATA.speeches.find(s => s.id === c.dataset.id); if (st.sp !== sp) openSpeech(sp);
+});
+$("btn-home").addEventListener("click", () => { try { location.hash = ""; } catch (e) {} goHome(); });
+$("script-inner").addEventListener("click", e => {
+  const sec = e.target.closest(".sec-play");
+  if (sec) { run(+sec.dataset.first, +sec.dataset.last, "all"); return; }
+  const line = e.target.closest(".line"); if (!line) return;
+  const i = +line.dataset.i;
+  if (st.mode && st.idx === i && st.mode === "one") { stop(); return; }
+  run(i, i, "one");
+});
+$("btn-play").addEventListener("click", () => {
+  if (st.mode) { stop(); return; }
+  const last = st.items.length - 1;
+  run(st.done || st.idx > last ? 0 : st.idx, last, "all");
+});
+document.querySelector(".seg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || b.dataset.speed === st.speed) return;
+  const was = st.mode, end = st.end;
+  halt(); st.speed = b.dataset.speed; savePrefs();
+  if (was) run(st.idx, end, was); else { paint(); loadBuffer().catch(() => {}); }
+});
+$("btn-follow").addEventListener("click", () => { st.follow = !st.follow; savePrefs(); paint(); });
+$("btn-repeat").addEventListener("click", () => { st.repeat = !st.repeat; paint(); });
+$("btn-smaller").addEventListener("click", () => { if (st.fs > 0) { st.fs--; savePrefs(); paint(); } });
+$("btn-bigger").addEventListener("click", () => { if (st.fs < FONT_STEPS.length - 1) { st.fs++; savePrefs(); paint(); } });
+window.addEventListener("hashchange", route);
+document.addEventListener("visibilitychange", () => { if (document.hidden && st.mode) stop(); });
+paint(); route();
+if ("serviceWorker" in navigator) {
+  const note = $("pwa-note");
+  note.textContent = "正在下載聲音，下載完成後沒有網路也能練習…";
+  navigator.serviceWorker.register("sw.js")
+    .then(() => navigator.serviceWorker.ready)
+    .then(() => { note.textContent = "已下載完成，沒有網路也能練習。從瀏覽器選單選「加到主畫面」，就能像 App 一樣打開。"; })
+    .catch(() => { note.textContent = "離線功能沒有啟用成功，有網路時仍可正常使用。"; });
+}
+</script>
+
+</body>
+</html>
